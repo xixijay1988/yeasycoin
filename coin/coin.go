@@ -21,6 +21,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric/core/chaincode/shim"
+	pb "github.com/hyperledger/fabric/protos/peer"
 )
 
 const (
@@ -31,19 +32,24 @@ const (
 type Yeasycoin struct {
 }
 
-func (coin *Yeasycoin) Init(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
+func (coin *Yeasycoin) Init(stub shim.ChaincodeStubInterface) pb.Response {
+
+	function, args := stub.GetFunctionAndParameters()
 	if function != "init" {
-		return nil, ErrInvalidFunction
+		// return nil, ErrInvalidFunction
+		return shim.Error(ErrInvalidFunction.Error())
 	}
 
 	if len(args) != 2 {
-		return nil, ErrInvalidParams
+		// return nil, ErrInvalidParams
+		return shim.Error(ErrInvalidParams.Error())
 	}
 
 	bankName := args[0]
 	bankNumber, err := strconv.ParseUint(args[1], 10, 64)
 	if err != nil {
-		return nil, err
+		// return nil, err
+		return shim.Error(err.Error())
 	}
 
 	// init center bank
@@ -55,23 +61,28 @@ func (coin *Yeasycoin) Init(stub shim.ChaincodeStubInterface, function string, a
 	}
 	bankBytes, err := proto.Marshal(cbank)
 	if err != nil {
-		return nil, err
+		// return nil, err
+		return shim.Error(err.Error())
 	}
 
 	// put bank into blockchain
 	if err := stub.PutState("bank_0", bankBytes); err != nil {
-		return nil, err
+		// return nil, err
+		return shim.Error(err.Error())
 	}
 
 	// put something else into blockchain
 	if err := stub.PutState(max_bankId, []byte("0")); err != nil {
-		return nil, err
+		// return nil, err
+		return shim.Error(err.Error())
 	}
 	if err := stub.PutState(max_companyId, []byte("0")); err != nil {
-		return nil, err
+		// return nil, err
+		return shim.Error(err.Error())
 	}
 
-	return bankBytes, nil
+	// return bankBytes, nil
+	return shim.Success(bankBytes)
 }
 
 const (
@@ -83,7 +94,10 @@ const (
 	invoke_transfer        = "transfer"
 )
 
-func (coin *Yeasycoin) Invoke(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
+func (coin *Yeasycoin) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
+
+	function, args := stub.GetFunctionAndParameters()
+
 	switch function {
 	case invoke_createBank:
 		return coin.createBank(stub, args)
@@ -98,6 +112,7 @@ func (coin *Yeasycoin) Invoke(stub shim.ChaincodeStubInterface, function string,
 	case invoke_transfer:
 		return coin.transfer(stub, args)
 	default:
-		return nil, ErrInvalidFunction
+		// return nil, ErrInvalidFunction
+		return shim.Error(ErrInvalidParams.Error())
 	}
 }
